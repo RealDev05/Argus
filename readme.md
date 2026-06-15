@@ -1,4 +1,4 @@
-# 🧳 Luggage Locator Pro
+# 🧳 Argus
 
 A lightweight, offline-first, mobile web application designed to help you organize and instantly locate items packed across multiple bags, suitcases, and compartments.
 
