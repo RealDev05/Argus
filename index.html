@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Luggage Locator</title>
+    <title>Luggage Locator Pro</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <style>
@@ -11,6 +11,7 @@
             --bg-color: #f2f2f7;
             --card-bg: #ffffff;
             --primary: #007aff;
+            --danger: #ff3b30;
             --text-main: #1c1c1e;
             --text-sub: #8e8e93;
             --border: #e5e5ea;
@@ -22,152 +23,220 @@
             margin: 0;
             padding: 0;
             color: var(--text-main);
-            padding-bottom: 40px;
+            padding-bottom: 80px; /* Space for FAB */
         }
         header {
             background-color: var(--card-bg);
             padding: 15px 20px;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 10;
             border-bottom: 1px solid var(--border);
         }
-        h1 {
-            margin: 0 0 15px 0;
-            font-size: 24px;
-            text-align: center;
+        h1 { margin: 0 0 15px 0; font-size: 24px; text-align: center; }
+        .search-container { position: relative; }
+        .search-container input {
+            width: 100%; box-sizing: border-box; padding: 12px 15px 12px 35px;
+            border-radius: 10px; border: none; background-color: var(--search-bg);
+            font-size: 16px; outline: none;
         }
-        .search-container {
+        .search-container input:focus { box-shadow: 0 0 0 2px var(--primary); }
+        .search-icon {
+            position: absolute; left: 10px; top: 50%;
+            transform: translateY(-50%); color: #8e8e93;
+        }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        
+        /* Item Cards */
+        .item-card {
+            background: var(--card-bg); border-radius: 10px; padding: 15px;
+            margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             position: relative;
         }
-        .search-container input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 15px 12px 35px;
-            border-radius: 10px;
-            border: none;
-            background-color: var(--search-bg);
-            font-size: 16px;
-            outline: none;
-        }
-        .search-container input:focus {
-            box-shadow: 0 0 0 2px var(--primary);
-        }
-        .search-icon {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #8e8e93;
-        }
-        .container {
-            padding: 15px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .item-card {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-        }
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .item-name {
-            font-size: 18px;
-            font-weight: 600;
-        }
+        .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; padding-right: 60px;}
+        .item-name { font-size: 18px; font-weight: 600; }
         .location-tag {
-            display: inline-flex;
-            align-items: center;
-            background: #e5f1ff;
-            color: var(--primary);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
+            display: inline-flex; align-items: center; background: #e5f1ff;
+            color: var(--primary); padding: 4px 10px; border-radius: 6px;
+            font-size: 13px; font-weight: 500; margin-top: 5px;
         }
-        .location-tag svg {
-            width: 14px;
-            height: 14px;
-            margin-right: 4px;
-            fill: currentColor;
-        }
-        .item-details {
-            font-size: 14px;
-            color: var(--text-sub);
-        }
+        .item-details { font-size: 14px; color: var(--text-sub); }
         .count-badge {
-            background: var(--border);
-            color: var(--text-main);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 8px;
-            font-weight: bold;
+            background: var(--border); color: var(--text-main);
+            padding: 2px 6px; border-radius: 4px; font-size: 12px;
+            margin-left: 8px; font-weight: bold;
         }
-        .empty-state {
-            text-align: center;
-            color: var(--text-sub);
-            margin-top: 40px;
-            font-size: 16px;
+        .card-actions {
+            position: absolute; top: 15px; right: 15px; display: flex; gap: 10px;
         }
+        .icon-btn {
+            background: none; border: none; padding: 5px; font-size: 16px;
+            cursor: pointer; color: var(--text-sub);
+        }
+        .empty-state { text-align: center; color: var(--text-sub); margin-top: 40px; font-size: 16px; }
+        
+        /* Floating Action Button */
+        .fab {
+            position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px;
+            background-color: var(--primary); color: white; border-radius: 30px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.4);
+            cursor: pointer; border: none; z-index: 100;
+        }
+
+        /* Modal / Form */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center;
+            align-items: center; z-index: 200;
+        }
+        .modal {
+            background: var(--card-bg); width: 90%; max-width: 400px;
+            border-radius: 12px; padding: 20px; box-sizing: border-box;
+        }
+        .modal h2 { margin-top: 0; font-size: 20px; margin-bottom: 20px;}
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; color: var(--text-sub); margin-bottom: 5px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 16px; box-sizing: border-box;
+        }
+        .cat-action-group { display: flex; gap: 10px; align-items: center; }
+        .cat-action-group select { flex-grow: 1; }
+        .btn-delete-cat {
+            background: var(--danger); color: white; border: none; border-radius: 8px;
+            padding: 10px; cursor: pointer; display: none;
+        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn-cancel { background: var(--search-bg); color: var(--text-main); }
+        .btn-save { background: var(--primary); color: white; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Luggage Locator</h1>
+        <h1>Luggage Locator Pro</h1>
         <div class="search-container">
             <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="searchInput" placeholder="Search for items, medicines, etc..." onkeyup="filterItems()">
+            <input type="text" id="searchInput" placeholder="Search items..." onkeyup="filterItems()">
         </div>
     </header>
 
-    <div class="container" id="results">
+    <div class="container" id="results"></div>
+
+    <button class="fab" onclick="openModal()">+</button>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Add Item</h2>
+            <input type="hidden" id="editItemId">
+            
+            <div class="form-group">
+                <label>Item Name *</label>
+                <input type="text" id="itemName" placeholder="e.g. Toothbrush">
+            </div>
+
+            <div class="form-group">
+                <label>Location / Category *</label>
+                <div class="cat-action-group">
+                    <select id="itemLocation" onchange="handleCategoryChange()"></select>
+                    <button class="btn-delete-cat" id="deleteCatBtn" onclick="deleteCurrentCategory()" title="Delete this entire category">🗑️</button>
+                </div>
+            </div>
+
+            <div class="form-group" id="newCategoryGroup" style="display: none;">
+                <label>New Category Name</label>
+                <input type="text" id="newCategoryName" placeholder="e.g. Laptop Backpack">
+            </div>
+
+            <div class="form-group">
+                <label>Description (Optional)</label>
+                <input type="text" id="itemDesc" placeholder="e.g. tracks + formals">
+            </div>
+
+            <div class="form-group">
+                <label>Count (Optional)</label>
+                <input type="number" id="itemCount" placeholder="e.g. 3">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-save" onclick="saveItem()">Save</button>
+            </div>
         </div>
+    </div>
 
     <script>
-        // The hierarchical data
-        const luggageData = [
-            { category: "Trolly inner side", items: [{ name: "Volini" }, { name: "Carmicide" }, { name: "Gas tablets" }, { name: "Skincare" }, { name: "Bathroom utilities" }, { name: "Mask" }, { name: "Bag for used dress" }] },
-            { category: "Trolly main", items: [{ name: "Pants", description: "tracks + formals" }, { name: "Upperwear", description: "formals shirt + T shirt + night T shirt" }, { name: "Inner", description: "upper + lower" }, { name: "Thermal wear" }, { name: "Socks" }, { name: "Cap" }, { name: "Gloves" }, { name: "Boots" }] },
-            { category: "Bag Main", items: [{ name: "Coat" }, { name: "Night T shirt", count: 3 }, { name: "Tracks", count: 2 }, { name: "Underwear", count: 2 }] },
-            { category: "Bag sub main", items: [{ name: "Hoody" }, { name: "Snacks" }, { name: "Bread" }, { name: "Jam" }, { name: "Spoon" }, { name: "Lunch" }] },
-            { category: "Bag Front upper", items: [{ name: "Tissue", count: 4, description: "10x" }, { name: "Wet wipes", count: 30 }] },
-            { category: "Bag Front Lower", items: [{ name: "Hand wash" }, { name: "Face wash" }, { name: "Sanitizer" }] },
-            { category: "Bag Front Lower Sub", items: [{ name: "Spare plastic covers" }] },
-            { category: "Bag Left Side", items: [{ name: "Kerchief" }, { name: "Body spray" }] }
+        // Unique ID Generator for robust editing/deleting
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+        // The default fallback data
+        const defaultData = [
+            { category: "Trolly inner side", items: [{ id: generateId(), name: "Volini" }, { id: generateId(), name: "Carmicide" }, { id: generateId(), name: "Gas tablets" }, { id: generateId(), name: "Skincare" }, { id: generateId(), name: "Bathroom utilities" }, { id: generateId(), name: "Mask" }, { id: generateId(), name: "Bag for used dress" }] },
+            { category: "Trolly main", items: [{ id: generateId(), name: "Pants", description: "tracks + formals" }, { id: generateId(), name: "Upperwear", description: "formals shirt + T shirt + night T shirt" }, { id: generateId(), name: "Inner", description: "upper + lower" }, { id: generateId(), name: "Thermal wear" }, { id: generateId(), name: "Socks" }, { id: generateId(), name: "Cap" }, { id: generateId(), name: "Gloves" }, { id: generateId(), name: "Boots" }] },
+            { category: "Bag Main", items: [{ id: generateId(), name: "Coat" }, { id: generateId(), name: "Night T shirt", count: 3 }, { id: generateId(), name: "Tracks", count: 2 }, { id: generateId(), name: "Underwear", count: 2 }] },
+            { category: "Bag sub main", items: [{ id: generateId(), name: "Hoody" }, { id: generateId(), name: "Snacks" }, { id: generateId(), name: "Bread" }, { id: generateId(), name: "Jam" }, { id: generateId(), name: "Spoon" }, { id: generateId(), name: "Lunch" }] },
+            { category: "Bag Front upper", items: [{ id: generateId(), name: "Tissue", count: 4, description: "10x" }, { id: generateId(), name: "Wet wipes", count: 30 }] },
+            { category: "Bag Front Lower", items: [{ id: generateId(), name: "Hand wash" }, { id: generateId(), name: "Face wash" }, { id: generateId(), name: "Sanitizer" }] },
+            { category: "Bag Front Lower Sub", items: [{ id: generateId(), name: "Spare plastic covers" }] },
+            { category: "Bag Left Side", items: [{ id: generateId(), name: "Kerchief" }, { id: generateId(), name: "Body spray" }] }
         ];
 
-        // Flatten the data for O(N) searching
+        let luggageData = [];
         let searchableItems = [];
-        luggageData.forEach(bag => {
-            bag.items.forEach(item => {
-                searchableItems.push({
-                    location: bag.category,
-                    name: item.name,
-                    description: item.description || '',
-                    count: item.count || null
+
+        // Initialization
+        function initApp() {
+            const saved = localStorage.getItem('luggageLocatorData');
+            if (saved) {
+                luggageData = JSON.parse(saved);
+            } else {
+                luggageData = defaultData;
+                saveData();
+            }
+            flattenData();
+            filterItems();
+        }
+
+        // Save & Flatten Structure
+        function saveData() {
+            localStorage.setItem('luggageLocatorData', JSON.stringify(luggageData));
+            flattenData();
+        }
+
+        function flattenData() {
+            searchableItems = [];
+            luggageData.forEach(bag => {
+                bag.items.forEach(item => {
+                    searchableItems.push({
+                        id: item.id,
+                        location: bag.category,
+                        name: item.name,
+                        description: item.description || '',
+                        count: item.count || null
+                    });
                 });
             });
-        });
+        }
 
-        const resultsContainer = document.getElementById('results');
+        // Search & Render
+        function filterItems() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = searchableItems.filter(item => {
+                return item.name.toLowerCase().includes(query) || 
+                       item.location.toLowerCase().includes(query) || 
+                       item.description.toLowerCase().includes(query);
+            });
+            renderList(filtered);
+        }
 
-        // Render function
         function renderList(items) {
-            resultsContainer.innerHTML = '';
+            const container = document.getElementById('results');
+            container.innerHTML = '';
             
             if (items.length === 0) {
-                resultsContainer.innerHTML = '<div class="empty-state">No items found matching your search.</div>';
+                container.innerHTML = '<div class="empty-state">No items found.</div>';
                 return;
             }
 
@@ -178,34 +247,141 @@
                 const card = document.createElement('div');
                 card.className = 'item-card';
                 card.innerHTML = `
+                    <div class="card-actions">
+                        <button class="icon-btn" onclick="editItem('${item.id}')">✏️</button>
+                        <button class="icon-btn" onclick="deleteItem('${item.id}')">🗑️</button>
+                    </div>
                     <div class="item-header">
-                        <div class="item-name">${item.name} ${countHtml}</div>
-                        <div class="location-tag">
-                            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                            ${item.location}
+                        <div>
+                            <div class="item-name">${item.name} ${countHtml}</div>
+                            ${descHtml}
+                            <div class="location-tag">${item.location}</div>
                         </div>
                     </div>
-                    ${descHtml}
                 `;
-                resultsContainer.appendChild(card);
+                container.appendChild(card);
             });
         }
 
-        // Filter function attached to the search bar
-        function filterItems() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
+        // --- CRUD Logic ---
+
+        function openModal(itemId = null) {
+            document.getElementById('modalOverlay').style.display = 'flex';
+            const select = document.getElementById('itemLocation');
             
-            const filtered = searchableItems.filter(item => {
-                return item.name.toLowerCase().includes(query) || 
-                       item.location.toLowerCase().includes(query) || 
-                       item.description.toLowerCase().includes(query);
+            // Populate Categories Dropdown
+            select.innerHTML = '<option value="">-- Select Category --</option>';
+            luggageData.forEach(bag => {
+                select.innerHTML += `<option value="${bag.category}">${bag.category}</option>`;
             });
+            select.innerHTML += `<option value="__NEW__" style="font-weight:bold; color:var(--primary);">+ Create New Category</option>`;
 
-            renderList(filtered);
+            if (itemId) {
+                // Edit Mode
+                document.getElementById('modalTitle').innerText = "Edit Item";
+                const item = searchableItems.find(i => i.id === itemId);
+                document.getElementById('editItemId').value = item.id;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemLocation').value = item.location;
+                document.getElementById('itemDesc').value = item.description || '';
+                document.getElementById('itemCount').value = item.count || '';
+            } else {
+                // Add Mode
+                document.getElementById('modalTitle').innerText = "Add Item";
+                document.getElementById('editItemId').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemDesc').value = '';
+                document.getElementById('itemCount').value = '';
+                select.selectedIndex = 0;
+            }
+            handleCategoryChange();
         }
 
-        // Initial render of all items
-        renderList(searchableItems);
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        function handleCategoryChange() {
+            const select = document.getElementById('itemLocation');
+            const newCatGroup = document.getElementById('newCategoryGroup');
+            const deleteBtn = document.getElementById('deleteCatBtn');
+            
+            // Handle "Add New" visibility
+            if (select.value === '__NEW__') {
+                newCatGroup.style.display = 'block';
+                document.getElementById('newCategoryName').focus();
+            } else {
+                newCatGroup.style.display = 'none';
+            }
+
+            // Handle "Delete Category" visibility
+            if (select.value && select.value !== '__NEW__') {
+                deleteBtn.style.display = 'block';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        function saveItem() {
+            const id = document.getElementById('editItemId').value || generateId();
+            const name = document.getElementById('itemName').value.trim();
+            const desc = document.getElementById('itemDesc').value.trim();
+            const count = document.getElementById('itemCount').value.trim();
+            
+            let category = document.getElementById('itemLocation').value;
+            if (category === '__NEW__') {
+                category = document.getElementById('newCategoryName').value.trim();
+                if (!category) return alert("Please enter a new category name.");
+                // Create category if it doesn't exist
+                luggageData.push({ category: category, items: [] });
+            }
+
+            if (!name || !category) return alert("Name and Category are required.");
+
+            const newItem = { id, name };
+            if (desc) newItem.description = desc;
+            if (count) newItem.count = Number(count);
+
+            // Remove item from old category if editing
+            if (document.getElementById('editItemId').value) {
+                const oldItem = searchableItems.find(i => i.id === id);
+                const oldBag = luggageData.find(b => b.category === oldItem.location);
+                oldBag.items = oldBag.items.filter(i => i.id !== id);
+            }
+
+            // Add to target category
+            const targetBag = luggageData.find(b => b.category === category);
+            if (targetBag) {
+                targetBag.items.push(newItem);
+            }
+
+            saveData();
+            filterItems();
+            closeModal();
+        }
+
+        function deleteItem(id) {
+            if (confirm("Delete this item?")) {
+                const item = searchableItems.find(i => i.id === id);
+                const bag = luggageData.find(b => b.category === item.location);
+                bag.items = bag.items.filter(i => i.id !== id);
+                saveData();
+                filterItems();
+            }
+        }
+
+        function deleteCurrentCategory() {
+            const catName = document.getElementById('itemLocation').value;
+            if (confirm(`Are you sure you want to delete the category "${catName}" AND all the items inside it?`)) {
+                luggageData = luggageData.filter(b => b.category !== catName);
+                saveData();
+                filterItems();
+                closeModal();
+            }
+        }
+
+        // Run on load
+        initApp();
     </script>
 </body>
 </html>
