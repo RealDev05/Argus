@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Luggage Locator</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --primary: #007aff;
+            --text-main: #1c1c1e;
+            --text-sub: #8e8e93;
+            --border: #e5e5ea;
+            --search-bg: #e3e3e8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            padding-bottom: 40px;
+        }
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            text-align: center;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-container input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 15px 12px 35px;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--search-bg);
+            font-size: 16px;
+            outline: none;
+        }
+        .search-container input:focus {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8e8e93;
+        }
+        .container {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .item-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .location-tag {
+            display: inline-flex;
+            align-items: center;
+            background: #e5f1ff;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .location-tag svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+            fill: currentColor;
+        }
+        .item-details {
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+        .count-badge {
+            background: var(--border);
+            color: var(--text-main);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        .empty-state {
+            text-align: center;
+            color: var(--text-sub);
+            margin-top: 40px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Luggage Locator</h1>
+        <div class="search-container">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" placeholder="Search for items, medicines, etc..." onkeyup="filterItems()">
+        </div>
+    </header>
+
+    <div class="container" id="results">
+        </div>
+
+    <script>
+        // The hierarchical data
+        const luggageData = [
+            { category: "Trolly inner side", items: [{ name: "Volini" }, { name: "Carmicide" }, { name: "Gas tablets" }, { name: "Skincare" }, { name: "Bathroom utilities" }, { name: "Mask" }, { name: "Bag for used dress" }] },
+            { category: "Trolly main", items: [{ name: "Pants", description: "tracks + formals" }, { name: "Upperwear", description: "formals shirt + T shirt + night T shirt" }, { name: "Inner", description: "upper + lower" }, { name: "Thermal wear" }, { name: "Socks" }, { name: "Cap" }, { name: "Gloves" }, { name: "Boots" }] },
+            { category: "Bag Main", items: [{ name: "Coat" }, { name: "Night T shirt", count: 3 }, { name: "Tracks", count: 2 }, { name: "Underwear", count: 2 }] },
+            { category: "Bag sub main", items: [{ name: "Hoody" }, { name: "Snacks" }, { name: "Bread" }, { name: "Jam" }, { name: "Spoon" }, { name: "Lunch" }] },
+            { category: "Bag Front upper", items: [{ name: "Tissue", count: 4, description: "10x" }, { name: "Wet wipes", count: 30 }] },
+            { category: "Bag Front Lower", items: [{ name: "Hand wash" }, { name: "Face wash" }, { name: "Sanitizer" }] },
+            { category: "Bag Front Lower Sub", items: [{ name: "Spare plastic covers" }] },
+            { category: "Bag Left Side", items: [{ name: "Kerchief" }, { name: "Body spray" }] }
+        ];
+
+        // Flatten the data for O(N) searching
+        let searchableItems = [];
+        luggageData.forEach(bag => {
+            bag.items.forEach(item => {
+                searchableItems.push({
+                    location: bag.category,
+                    name: item.name,
+                    description: item.description || '',
+                    count: item.count || null
+                });
+            });
+        });
+
+        const resultsContainer = document.getElementById('results');
+
+        // Render function
+        function renderList(items) {
+            resultsContainer.innerHTML = '';
+            
+            if (items.length === 0) {
+                resultsContainer.innerHTML = '<div class="empty-state">No items found matching your search.</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                let countHtml = item.count ? `<span class="count-badge">x${item.count}</span>` : '';
+                let descHtml = item.description ? `<div class="item-details">${item.description}</div>` : '';
+
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-name">${item.name} ${countHtml}</div>
+                        <div class="location-tag">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            ${item.location}
+                        </div>
+                    </div>
+                    ${descHtml}
+                `;
+                resultsContainer.appendChild(card);
+            });
+        }
+
+        // Filter function attached to the search bar
+        function filterItems() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filtered = searchableItems.filter(item => {
+                return item.name.toLowerCase().includes(query) || 
+                       item.location.toLowerCase().includes(query) || 
+                       item.description.toLowerCase().includes(query);
+            });
+
+            renderList(filtered);
+        }
+
+        // Initial render of all items
+        renderList(searchableItems);
+    </script>
+</body>
+</html>
